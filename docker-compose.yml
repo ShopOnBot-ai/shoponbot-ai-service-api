@@ -1,0 +1,20 @@
+services:
+
+  ai_service:
+    build: .
+    container_name: ai_service
+    expose:
+      - "8001"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/.venv
+    networks:
+      - fastapi_app
+
+
+networks:
+  fastapi_app:
+    external: true
+    name: shoponbot-production-network
