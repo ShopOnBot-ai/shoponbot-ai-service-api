@@ -12,5 +12,8 @@ class Settings(BaseSettings):
     qdrant_port: int
     kafka_bootstrap_server: str
     redis_url: str
+    backend_api_url: str
+    jwt_secret_key: str
+    jwt_algorithm: str
 
 settings = Settings()
