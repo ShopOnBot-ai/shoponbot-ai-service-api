@@ -3,13 +3,11 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 
-from app.core.logger import logger
 from app.core.security import verify_token
 
 
 async def get_current_user(request: Request) -> dict:
     token = request.cookies.get("access_token")
-    logger.info("token: %s", token)
 
     if not token:
         raise HTTPException(
