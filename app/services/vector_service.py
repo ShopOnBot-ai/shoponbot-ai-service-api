@@ -24,6 +24,8 @@ async def process_vector_events(event_type: str, payload: dict) -> None:
             title = payload.get("title")
             description = payload.get("description")
             price = payload.get("price")
+            in_stock = payload.get("in_stock")
+            stock_quantity= payload.get("stock_quantity")
 
             logger.info(
                 "Vectorizing text context for RAG storage processing. Product ID: %s",
@@ -32,7 +34,7 @@ async def process_vector_events(event_type: str, payload: dict) -> None:
 
             text_chunk_document = f"Product Title: {title}\nDescription: {description}\nPrice: {price} INR"
 
-            vector_embeddings_array = embedding_model.embed_query(text_chunk_document)
+            vector_embeddings_array = await embedding_model.aembed_query(text_chunk_document)
 
             point_entry = PointStruct(
                 id=int(product_id),
@@ -41,12 +43,14 @@ async def process_vector_events(event_type: str, payload: dict) -> None:
                     "product_id": product_id,
                     "title": title,
                     "description": description,
-                    "price": price,
+                    "price": int(price),
+                    "in_stock": str(in_stock).lower() == "true",
+                    "stock_quantity": int(stock_quantity),
                     "text_metadata_content": text_chunk_document,
                 },
             )
 
-            client.upsert(collection_name="products", points=[point_entry])
+            await client.upsert(collection_name="products", points=[point_entry])
 
         elif event_type == "ProductDeleted":
             logger.info(
@@ -54,7 +58,7 @@ async def process_vector_events(event_type: str, payload: dict) -> None:
                 product_id,
             )
 
-            client.delete(collection_name="products", points_selector=[int(product_id)])
+            await client.delete(collection_name="products", points_selector=[int(product_id)])
             logger.info(
                 "SUCCESS: Stale product vectors completely flushed out from RAG index storage."
             )
