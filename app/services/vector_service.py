@@ -22,17 +22,26 @@ async def process_vector_events(event_type: str, payload: dict) -> None:
     try:
         if event_type in ["ProductCreated", "ProductUpdated"]:
             title = payload.get("title")
-            description = payload.get("description")
+            description = payload.get("description") or ""
             price = payload.get("price")
-            in_stock = payload.get("in_stock")
-            stock_quantity= payload.get("stock_quantity")
+            category_id = payload.get("category_id")
+            category_name = payload.get("category_name") or ""
+            category_keywords = payload.get("category_keywords") or ""
+            in_stock = payload.get("in_stock", False)
+            stock_quantity= payload.get("stock_quantity", 0)
 
             logger.info(
                 "Vectorizing text context for RAG storage processing. Product ID: %s",
                 product_id,
             )
 
-            text_chunk_document = f"Product Title: {title}\nDescription: {description}\nPrice: {price} INR"
+            text_chunk_document = (
+                f"Product Title: {title}\n"
+                f"Category: {category_name}\n"
+                f"Keywords: {category_keywords}\n"
+                f"Description: {description}\n"
+                f"Price: {price} INR"
+            )
 
             vector_embeddings_array = await embedding_model.aembed_query(text_chunk_document)
 
@@ -44,6 +53,8 @@ async def process_vector_events(event_type: str, payload: dict) -> None:
                     "title": title,
                     "description": description,
                     "price": int(price),
+                    "category_id": category_id,
+                    "category_name": category_name,
                     "in_stock": str(in_stock).lower() == "true",
                     "stock_quantity": int(stock_quantity),
                     "text_metadata_content": text_chunk_document,

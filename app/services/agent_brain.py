@@ -1,9 +1,8 @@
+import os
 import time
-from pprint import pformat
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import (
-    AIMessage,
     AIMessageChunk,
     BaseMessage,
     SystemMessage,
@@ -24,7 +23,9 @@ from app.services.tools import fetch_user_cart_data, search_products_tool
 
 db_url = settings.database_url.replace("+asyncpg", "")
 
-MAX_HISTORY_MESSAGES = 12
+MAX_HISTORY_MESSAGES = int(os.getenv("MAX_HISTORY_MESSAGES", "12"))
+
+checkpointer = None
 
 pool = AsyncConnectionPool(
     conninfo=db_url,
@@ -40,7 +41,9 @@ SYSTEM_PROMPT = """You are ShopOnBot, a shopping assistant for an Indian online 
 - Use the search_products tool to find products and the fetch_user_cart_data tool for cart questions.
 - Answer ONLY from tool results. Never invent products, prices, colours or availability.
 - If a tool returns no products, say that no matching products were found.
-- List each product with its name and price. Keep answers short and do not add generic disclaimers."""
+- List each product with its name and price. Keep answers short and do not add generic disclaimers.
+- If the user needs both product search and cart information, call both tools in the same step.
+- You can only help with product search and the shopping cart. You cannot look up or track orders, payments or deliveries; say so politely and do not call any tool."""
 
 ANSWER_PROMPT = """You are ShopOnBot, a shopping assistant for an Indian online store.
 Write the final reply to the customer using ONLY the tool result in the conversation above.

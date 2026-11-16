@@ -9,7 +9,9 @@ from app.core.logger import logger
 from app.services.product_search import search_products
 
 
-@tool(description="Retrieves active shopping cart items and pricing details for a given user identifier.")
+@tool(description="Retrieves the logged-in user's current shopping cart items and pricing. "
+    "Use ONLY for questions about the cart. "
+    "Do NOT use for orders, order status, tracking, payments or delivery.")
 async def fetch_user_cart_data(config: RunnableConfig) -> str:
     cookies = config.get("configurable", {}).get("auth_cookies", {})
     async with httpx.AsyncClient(timeout=10.0) as client:
@@ -31,7 +33,8 @@ async def search_products_tool(query: str, max_price: int | None = None, limit: 
     Use when the user wants to find, browse or compare products,
     e.g. "running shoes under 700".
     Put only the product description in `query` (no price words).
-    Put the price limit in `max_price`, in rupees.
+    Put the price limit in `max_price`, in rupees, ONLY when the user states
+    an explicit number. Never guess a number from words like cheap, sasta or budget.
     Do NOT use for cart or order questions."""
 
     results = await search_products(query=query, max_price=max_price, limit=limit)

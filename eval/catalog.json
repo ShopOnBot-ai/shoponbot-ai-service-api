@@ -1,0 +1,192 @@
+{
+    "_note": "Sample test data for the eval set. Titles, prices and specs are made up for testing, not real market data.",
+    "categories": {
+        "Smartphones": "mobile, phone, smartphone, handset",
+        "Footwear": "shoes, sneakers, footwear",
+        "Mens Clothing": "t-shirt, shirt, clothing, apparel",
+        "Laptops": "laptop, notebook, computer",
+        "Headphones": "headphones, earphones, earbuds, audio"
+    },
+    "products": [
+        {
+            "product_id": 1,
+            "title": "POCO C85x (Emerald Green, 128 GB) (4 GB RAM)",
+            "description": "4 GB RAM | 128 GB ROM | Expandable Upto 2 TB",
+            "price": 16499,
+            "category": "Smartphones",
+            "in_stock": true,
+            "stock_quantity": 6
+        },
+        {
+            "product_id": 2,
+            "title": "Redmi Note Sample 5G (Midnight Black, 128 GB) (6 GB RAM)",
+            "description": "6 GB RAM | 128 GB ROM | Dual Camera | Large Battery",
+            "price": 17999,
+            "category": "Smartphones",
+            "in_stock": true,
+            "stock_quantity": 12
+        },
+        {
+            "product_id": 3,
+            "title": "Samsung Galaxy Sample 5G (Moonlight Blue, 128 GB) (8 GB RAM)",
+            "description": "8 GB RAM | 128 GB ROM | AMOLED Display",
+            "price": 20999,
+            "category": "Smartphones",
+            "in_stock": true,
+            "stock_quantity": 9
+        },
+        {
+            "product_id": 4,
+            "title": "Apple iPhone Sample (Black, 128 GB)",
+            "description": "128 GB ROM | iOS | Dual Camera System",
+            "price": 69999,
+            "category": "Smartphones",
+            "in_stock": true,
+            "stock_quantity": 4
+        },
+        {
+            "product_id": 5,
+            "title": "realme Narzo Sample (Forest Green, 64 GB) (4 GB RAM)",
+            "description": "4 GB RAM | 64 GB ROM | Expandable Upto 1 TB",
+            "price": 10999,
+            "category": "Smartphones",
+            "in_stock": false,
+            "stock_quantity": 0
+        },
+        {
+            "product_id": 6,
+            "title": "BOUNCER Running Shoes For Men",
+            "description": "JQR BOUNCER Running Shoes For Men (Grey, 10)",
+            "price": 657,
+            "category": "Footwear",
+            "in_stock": true,
+            "stock_quantity": 25
+        },
+        {
+            "product_id": 7,
+            "title": "ZOOM PLUS 2 Running Shoes For Men",
+            "description": "Lightweight mesh running shoes with cushioned sole",
+            "price": 734,
+            "category": "Footwear",
+            "in_stock": true,
+            "stock_quantity": 18
+        },
+        {
+            "product_id": 8,
+            "title": "Campus Walking Shoes For Men (Black, 9)",
+            "description": "Comfortable walking shoes with anti-skid sole",
+            "price": 1299,
+            "category": "Footwear",
+            "in_stock": true,
+            "stock_quantity": 14
+        },
+        {
+            "product_id": 9,
+            "title": "Sparx Casual Sneakers For Men (White, 8)",
+            "description": "White casual sneakers for daily wear",
+            "price": 899,
+            "category": "Footwear",
+            "in_stock": true,
+            "stock_quantity": 20
+        },
+        {
+            "product_id": 10,
+            "title": "Bata Formal Leather Shoes For Men (Brown, 9)",
+            "description": "Brown leather lace-up formal shoes for office",
+            "price": 2499,
+            "category": "Footwear",
+            "in_stock": true,
+            "stock_quantity": 7
+        },
+        {
+            "product_id": 11,
+            "title": "Kajaru Men's T Shirts",
+            "description": "KAJARU Pack of 2 Men Self Design Zip Neck Polyester Pink, Brown T-Shirt",
+            "price": 443,
+            "category": "Mens Clothing",
+            "in_stock": true,
+            "stock_quantity": 30
+        },
+        {
+            "product_id": 12,
+            "title": "Roadster Men's Round Neck Cotton T-Shirt (Navy, L)",
+            "description": "Pure cotton round neck t-shirt, regular fit",
+            "price": 349,
+            "category": "Mens Clothing",
+            "in_stock": true,
+            "stock_quantity": 40
+        },
+        {
+            "product_id": 13,
+            "title": "Levi's Men's Slim Fit Jeans (Blue, 32)",
+            "description": "Slim fit stretch denim jeans for men",
+            "price": 1999,
+            "category": "Mens Clothing",
+            "in_stock": true,
+            "stock_quantity": 15
+        },
+        {
+            "product_id": 14,
+            "title": "Allen Solly Men's Formal Shirt (White, 40)",
+            "description": "Full sleeve cotton formal shirt for office wear",
+            "price": 1499,
+            "category": "Mens Clothing",
+            "in_stock": true,
+            "stock_quantity": 11
+        },
+        {
+            "product_id": 15,
+            "title": "HP 15s Laptop (Intel Core i3, 8 GB RAM, 512 GB SSD)",
+            "description": "15.6 inch FHD display | Windows 11 | Thin and light",
+            "price": 38990,
+            "category": "Laptops",
+            "in_stock": true,
+            "stock_quantity": 5
+        },
+        {
+            "product_id": 16,
+            "title": "Lenovo IdeaPad Slim 3 (Ryzen 5, 16 GB RAM, 512 GB SSD)",
+            "description": "15.6 inch FHD display | Windows 11 | Backlit keyboard",
+            "price": 47990,
+            "category": "Laptops",
+            "in_stock": true,
+            "stock_quantity": 3
+        },
+        {
+            "product_id": 17,
+            "title": "ASUS Vivobook 15 (Intel Core i5, 16 GB RAM, 512 GB SSD)",
+            "description": "15.6 inch FHD display | Windows 11 | Fingerprint sensor",
+            "price": 52990,
+            "category": "Laptops",
+            "in_stock": true,
+            "stock_quantity": 2
+        },
+        {
+            "product_id": 18,
+            "title": "boAt Rockerz Sample Bluetooth Headphones (Black)",
+            "description": "Wireless over-ear headphones with long battery life",
+            "price": 1499,
+            "category": "Headphones",
+            "in_stock": true,
+            "stock_quantity": 22
+        },
+        {
+            "product_id": 19,
+            "title": "Sony Wireless Headphones Sample (Blue)",
+            "description": "Lightweight wireless on-ear headphones with clear sound",
+            "price": 4490,
+            "category": "Headphones",
+            "in_stock": true,
+            "stock_quantity": 10
+        },
+        {
+            "product_id": 20,
+            "title": "OnePlus Nord Buds Sample True Wireless Earbuds (Deep Grey)",
+            "description": "True wireless earbuds with charging case",
+            "price": 1999,
+            "category": "Headphones",
+            "in_stock": true,
+            "stock_quantity": 16
+        }
+    ]
+}

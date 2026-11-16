@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,7 +10,10 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
-    llm_provider: str = "ollama"
+    llm_provider: Literal["groq", "ollama"] = "groq"
+    groq_model: str = "openai/gpt-oss-120b"
+    ollama_model: str = "qwen2.5:3b"
+    llm_timeout_s: float = 30
 
     database_url: str
 

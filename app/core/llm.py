@@ -11,10 +11,12 @@ def build_llm():
         if not settings.groq_api_key:
             raise ValueError("Groq provider selected but GROQ_API_KEY is not set.")
         return ChatGroq(
-            model="openai/gpt-oss-120b",
+            model=settings.groq_model,
             api_key=settings.groq_api_key,
             temperature=0,
-            reasoning_effort="low"
+            reasoning_effort="low",
+            timeout=settings.llm_timeout_s,
+            max_retries=2,
         )
     elif provider == "ollama":
         return ChatOllama(
