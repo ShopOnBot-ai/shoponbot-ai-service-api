@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     kafka_bootstrap_server: str
     redis_url: str
     backend_api_url: str
+    order_api_url: str
     jwt_secret_key: str
     jwt_algorithm: str
 

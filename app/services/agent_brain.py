@@ -11,6 +11,7 @@ from langchain_core.messages import (
 )
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.errors import GraphInterrupt
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.types import StreamWriter
@@ -19,7 +20,13 @@ from psycopg_pool import AsyncConnectionPool
 from app.core.config import settings
 from app.core.llm import llm_chat_engine
 from app.core.logger import logger
-from app.services.tools import fetch_user_cart_data, search_products_tool
+from app.services.system_prompt import SYSTEM_PROMPT
+from app.services.tools import (
+    fetch_user_cart_data_tool,
+    get_user_address_tool,
+    place_order_tool,
+    search_products_tool,
+)
 
 db_url = settings.database_url.replace("+asyncpg", "")
 
@@ -36,15 +43,6 @@ pool = AsyncConnectionPool(
 
 checkpointer = AsyncPostgresSaver(pool)
 
-SYSTEM_PROMPT = """You are ShopOnBot, a shopping assistant for an Indian online store.
-- All prices are in Indian rupees. Always write prices as ₹ (for example ₹657), never $.
-- Use the search_products tool to find products and the fetch_user_cart_data tool for cart questions.
-- Answer ONLY from tool results. Never invent products, prices, colours or availability.
-- If a tool returns no products, say that no matching products were found.
-- List each product with its name and price. Keep answers short and do not add generic disclaimers.
-- If the user needs both product search and cart information, call both tools in the same step.
-- You can only help with product search and the shopping cart. You cannot look up or track orders, payments or deliveries; say so politely and do not call any tool."""
-
 ANSWER_PROMPT = """You are ShopOnBot, a shopping assistant for an Indian online store.
 Write the final reply to the customer using ONLY the tool result in the conversation above.
 - Prices are in Indian rupees; write them as ₹ (for example ₹657), never $.
@@ -53,8 +51,10 @@ Write the final reply to the customer using ONLY the tool result in the conversa
 - Reply in plain sentences. Never output JSON or tool calls."""
 
 TOOLS_BY_NAME = {
-    "fetch_user_cart_data": fetch_user_cart_data,
+    "fetch_user_cart_data": fetch_user_cart_data_tool,
     "search_products": search_products_tool,
+    "get_user_address": get_user_address_tool,
+    "place_order": place_order_tool
 }
 
 def chunk_text(content) -> str:
@@ -86,7 +86,12 @@ async def call_llm_model_node(state: AgentState, writer: StreamWriter) -> dict:
         model = llm_chat_engine
         prompt = [SystemMessage(content=ANSWER_PROMPT), *recent]
     else:
-        model = llm_chat_engine.bind_tools([fetch_user_cart_data, search_products_tool])
+        model = llm_chat_engine.bind_tools([
+                    fetch_user_cart_data_tool, 
+                    search_products_tool, 
+                    get_user_address_tool, 
+                    place_order_tool
+                ]).with_retry(stop_after_attempt=3)
         prompt = [SystemMessage(content=SYSTEM_PROMPT), *recent]
 
     full: AIMessageChunk | None = None
@@ -139,6 +144,8 @@ async def execute_tool_node(state: AgentState, config: RunnableConfig) -> dict:
             start = time.perf_counter()
             try:
                 result = await tool.ainvoke(tool_args, config=config)
+            except GraphInterrupt:
+                raise
             except Exception as err:
                 logger.exception("Tool %s failed: %s", name, err)
                 result = f"Error: the tool '{name}' failed. Please try again."
