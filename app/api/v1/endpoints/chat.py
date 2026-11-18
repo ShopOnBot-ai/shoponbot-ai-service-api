@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 from langfuse import get_client, propagate_attributes
 from langfuse.langchain import CallbackHandler
+from langgraph.types import Command
 
 from app.core.dependency import currentUser
 from app.core.logger import logger
@@ -23,6 +24,19 @@ def sse(event: str, data: dict) -> str:
 def get_thread_id(user_id) -> str:
     return f"user_thread_{user_id}"
 
+def extract_interrupt_message(state) -> str | None:
+    if not state or not getattr(state, "tasks", None):
+        return None
+    for task in state.tasks:
+        interrupts = getattr(task, "interrupts", None)
+        if interrupts:
+            val = interrupts[0].value
+            if isinstance(val, dict):
+                return val.get("message", "Please confirm this action (yes/no).")
+            return str(val)
+    if getattr(state, "next", None) and "action_tools" in state.next:
+        return "Please confirm this action (yes/no)."
+    return None
 
 async def stream_agent_events(
     request: Request, graph_input: dict, config: dict, thread_id: str, user_id:str
@@ -39,6 +53,9 @@ async def stream_agent_events(
                 logger.info("part: %s", part)
                 if await request.is_disconnected():
                     return
+                if isinstance(part, dict) and "payment" in part:
+                    yield sse("payment", part["payment"])
+                    continue
                 text = part.get("token") if isinstance(part, dict) else None
                 if not text:
                     continue
@@ -48,13 +65,19 @@ async def stream_agent_events(
                 yield sse("token", {"text": text})
 
             if sent == 0:
-                logger.warning("stream fallback used: no tokens came from the custom stream")
                 state = await compiled_agent_brain_graph.aget_state(config)
-                msgs = state.values.get("messages", [])
-                text = chunk_text(msgs[-1].content) if msgs else ""
-                if text:
+                interrupt_msg = extract_interrupt_message(state=state)
+                if interrupt_msg:
+                    logger.info("HITL Interrupt triggered: %s", interrupt_msg)
                     ttft = ttft or (time.perf_counter() - t0)
-                    yield sse("token", {"text": text})
+                    yield sse("token", {"text": interrupt_msg})
+                else:
+                    logger.warning("stream fallback used: no tokens came from the custom stream")
+                    msgs = state.values.get("messages", [])
+                    text = chunk_text(msgs[-1].content) if msgs else ""
+                    if text:
+                        ttft = ttft or (time.perf_counter() - t0)
+                        yield sse("token", {"text": text})
 
             total = time.perf_counter() - t0
             logger.info("stream done: ttft=%.2fs total=%.2fs chunks=%d", ttft or -1, total, sent)
@@ -73,26 +96,32 @@ async def stream_agent_events(
 async def chat_conversation(request: Request, payload: ChatMessageRequest, current_user: currentUser):
 
     auth_cookies = {k: v for k, v in request.cookies.items() if k == "access_token"}
+    thread_id = get_thread_id(current_user)
+    langfuse_handler = CallbackHandler()
 
-    initial_graph_state_input = {
-        "messages": [HumanMessage(content=payload.prompt)],
-        "user_id": current_user,
+    config = {
+        "configurable": {
+            "thread_id": get_thread_id(current_user),
+            "auth_cookies": auth_cookies
+        },
+        "callbacks": [langfuse_handler]
     }
 
-    langfuse_handler = CallbackHandler()
+    current_state = await compiled_agent_brain_graph.aget_state(config)
+    logger.info("Current state next: %s | tasks: %s", current_state.next, current_state.tasks)
+    if extract_interrupt_message(current_state):
+        logger.info("Resuming interrupted graph for thread %s with input: %s", thread_id, payload.prompt)
+        initial_graph_state_input = Command(resume=payload.prompt)
+    else:
+        initial_graph_state_input = {
+            "messages": [HumanMessage(content=payload.prompt)],
+            "user_id": current_user,
+        }
 
     with propagate_attributes(
         user_id=str(current_user),
         session_id=get_thread_id(current_user)
     ):
-
-        config = {
-            "configurable": {
-                "thread_id": get_thread_id(current_user),
-                "auth_cookies": auth_cookies
-            },
-            "callbacks": [langfuse_handler]
-        }
 
         if payload.stream:
             return StreamingResponse(
@@ -108,15 +137,22 @@ async def chat_conversation(request: Request, payload: ChatMessageRequest, curre
                 initial_graph_state_input,
                 config=config
             )
-            messages = final_state.get("messages", [])
-            reply = messages[-1].content if messages else "No response generated."
+            latest_state = await compiled_agent_brain_graph.aget_state(config)
+            interrupt_msg = extract_interrupt_message(latest_state)
+            if interrupt_msg:
+                reply = interrupt_msg
+                resp_status = "awaiting_confirmation"
+            else:
+                messages = final_state.get("messages", [])
+                reply = messages[-1].content if messages else "No response generated."
+                resp_status = "success"
 
-            return {
-                "response": reply,
-                "user_id": current_user,
-                "thread_id": get_thread_id(current_user),
-                "status": "success"
-            }
+                return {
+                    "response": reply,
+                    "user_id": current_user,
+                    "thread_id": get_thread_id(current_user),
+                    "status": resp_status
+                }
 
         except Exception as route_err:
             logger.exception("AI chat endpoint failed:")

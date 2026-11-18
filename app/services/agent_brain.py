@@ -51,7 +51,7 @@ Write the final reply to the customer using ONLY the tool result in the conversa
 - Reply in plain sentences. Never output JSON or tool calls."""
 
 TOOLS_BY_NAME = {
-    "fetch_user_cart_data": fetch_user_cart_data_tool,
+    "fetch_cart": fetch_user_cart_data_tool,
     "search_products": search_products_tool,
     "get_user_address": get_user_address_tool,
     "place_order": place_order_tool
@@ -82,17 +82,14 @@ async def call_llm_model_node(state: AgentState, writer: StreamWriter) -> dict:
     )
 
     last_message = messages[-1] if messages else None
-    if isinstance(last_message, ToolMessage):
-        model = llm_chat_engine
-        prompt = [SystemMessage(content=ANSWER_PROMPT), *recent]
-    else:
-        model = llm_chat_engine.bind_tools([
-                    fetch_user_cart_data_tool, 
-                    search_products_tool, 
-                    get_user_address_tool, 
-                    place_order_tool
-                ]).with_retry(stop_after_attempt=3)
-        prompt = [SystemMessage(content=SYSTEM_PROMPT), *recent]
+    logger.info("last message: %s", last_message)
+    model = llm_chat_engine.bind_tools([
+        fetch_user_cart_data_tool, 
+        search_products_tool, 
+        get_user_address_tool, 
+        place_order_tool
+    ]).with_retry(stop_after_attempt=3)
+    prompt = [SystemMessage(content=SYSTEM_PROMPT), *recent]
 
     full: AIMessageChunk | None = None
     async for chunk in model.astream(prompt):

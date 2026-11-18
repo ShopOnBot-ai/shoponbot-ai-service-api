@@ -1,10 +1,11 @@
 import json
 import uuid
+from typing import Annotated
 
 import httpx
 from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import tool
-from langgraph.types import interrupt
+from langchain_core.tools import InjectedToolArg, tool
+from langgraph.types import StreamWriter, interrupt
 
 from app.core.config import settings
 from app.core.logger import logger
@@ -35,10 +36,12 @@ async def get_user_address_tool(config: RunnableConfig) -> str:
              
 
 
-@tool(description="Retrieves the logged-in user's current shopping cart items and pricing. "
-    "Use ONLY for questions about the cart. "
-    "Do NOT use for orders, order status, tracking, payments or delivery.")
+@tool("fetch_cart")
 async def fetch_user_cart_data_tool(config: RunnableConfig) -> str:
+    """Retrieves the logged-in user's current shopping cart items and pricing.
+    Use ONLY for questions about the cart.
+    Do NOT use for orders, order status, tracking, payments or delivery."""
+
     cookies = config.get("configurable", {}).get("auth_cookies", {})
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
@@ -70,7 +73,7 @@ async def search_products_tool(query: str, max_price: int | None = None, limit: 
 
 
 @tool("place_order")
-async def place_order_tool(address_id: int, address_summary: str, config: RunnableConfig = None) -> str:
+async def place_order_tool(address_id: int, address_summary: str, writer: Annotated[StreamWriter, InjectedToolArg], config: RunnableConfig = None) -> str:
     """
     Places an order for the items currently in the user's cart.
     Always requires shipping_address. Default payment_method is COD.
@@ -94,10 +97,17 @@ async def place_order_tool(address_id: int, address_summary: str, config: Runnab
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            url = f"{settings.order_api_url}/api/v1/orders/place-order"
-            response = await client.get(url=url, json=payload, cookies=cookies)
+            url = f"{settings.order_api_url}/api/v1/orders/checkout/place-order"
+            response = await client.post(url=url, json=payload, cookies=cookies)
             response.raise_for_status()
             order_data = response.json()
+            writer({
+                 "payment": {
+                    "order_number": order_data.get("order_number"),
+                    "razorpay_order_id": order_data.get("razorpay_order_id"),
+                    "amount": order_data.get("total_amount"),
+                }
+            })
             return json.dumps(order_data, ensure_ascii=False)
     except Exception as e:
                 logger.exception("Failed to connect to the order service:")
